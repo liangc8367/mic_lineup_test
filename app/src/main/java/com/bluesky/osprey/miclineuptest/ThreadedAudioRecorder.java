@@ -74,15 +74,21 @@ public class ThreadedAudioRecorder implements DataSource {
                 recorder.startRecording();
                 while(mState == State.RUNNING){
                     ByteBuffer buf = mBufferSource.getByteBuffer();
-                    int szRead = recorder.read(buf, buf.limit());
-                    if(mCompletionHandler != null){
-                        mCompletionHandler.dataAvailable(buf);
+                    if(buf != null) {
+                        int szRead = recorder.read(buf, buf.limit());
+                        if (mCompletionHandler != null) {
+                            mCompletionHandler.dataAvailable(buf);
+                        }
                     }
                 }
 
                 // house cleanup
                 recorder.stop();
                 recorder.release();
+                mState = State.ZOMBIE;
+                if(mCompletionHandler != null){
+                    mCompletionHandler.onEndOfLife();
+                }
             }
 
         });
@@ -92,7 +98,7 @@ public class ThreadedAudioRecorder implements DataSource {
     }
 
     /** stop recording and release resources */
-    public boolean stop(){
+    public void stop(){
         mState=State.ZOMBIE;
     }
 

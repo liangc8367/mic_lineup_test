@@ -42,17 +42,30 @@ public class MicrophoneLineup {
         } catch (Exception e){
             Log.e(TAG, "failed to create encoder: " + e);
             mCodec = null;
+            return;
         }
+
+        MicLineupByteBufferSource bufferSource = new MicLineupByteBufferSource();
+        mAudioRecorder = new ThreadedAudioRecorder(bufferSource);
+        MicLineupCompHandler handler = new MicLineupCompHandler();
+        mAudioRecorder.setCompletionHandler(handler);
+
+        mState = State.INITIAL;
     }
 
     /** from start or restart (user navigates to the activity */
     /** start Mic lineup */
     public boolean start(){
+        if(mState != State.INITIAL){
+            return false;
+        }
+
         mCodec.start();
+        mInputBuffers = mCodec.getInputBuffers();
+        mOutputBuffers = mCodec.getOutputBuffers();
 
-        ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
-        ByteBuffer[] outputBuffers = mCodec.getOutputBuffers();
-
+        mAudioRecorder.start();
+        mState = State.RUNNING;
 
         return true;
     }
@@ -60,31 +73,91 @@ public class MicrophoneLineup {
     /** activity is no longer visible */
     /** stop mic lineup */
     public boolean stop(){
-        mCodec.stop();
+        mState = State.ZOMBIE;
+        mAudioRecorder.stop();
         return true;
     }
 
     /** destroy */
-    public boolean cleanup(){
+    private void release(){
+        mCodec.stop();
         mCodec.release();
         mCodec = null;
-        return false;
+        mAudioRecorder = null;
     }
 
-    /** another activity comes to the foreground */
-    public boolean pause(){
-        return false;
-    }
-
-    /** user returns to the activity */
-    public boolean resume(){
-        return true;
-    }
+//    /** another activity comes to the foreground */
+//    public boolean pause(){
+//        return false;
+//    }
+//
+//    /** user returns to the activity */
+//    public boolean resume(){
+//        return true;
+//    }
 
 
 
     /** private methods and members */
-    static final String TAG = "MicLineup";
-    MediaCodec mCodec = null;
-    
+
+    /** byte buffer factory, utilizes the input byte buffers from codec */
+    private class MicLineupByteBufferSource implements ByteBufferSource{
+
+        @Override
+        public ByteBuffer getByteBuffer() {
+            ++mCountTotal;
+            int index = mCodec.dequeueInputBuffer(0);// immediately
+            if(index == MediaCodec.INFO_TRY_AGAIN_LATER){
+                ++mCountFailed;
+                Log.i(TAG, "failed to get buffer from encoder, "
+                        + mCountFailed + "/" + mCountTotal);
+                return null;
+            } else {
+                return mInputBuffers[index];
+            }
+        }
+
+        private int mCountFailed    = 0;
+        private int mCountTotal     = 0;
+    }
+
+    /** completion handler to process Microphone events */
+    private class MicLineupCompHandler implements  DataSource.CompletionHandler{
+
+        @Override
+        public void dataAvailable(ByteBuffer byteBuffer) {
+            // compress audio
+            int sz  = byteBuffer.position();
+            mCodec.queueInputBuffer(
+                    index,
+                    0, // offset
+                    sz,
+                    0, // presentationTimeUS
+                    0  // flags
+            );
+
+            // get compressed audio
+        }
+
+        @Override
+        public void onEndOfLife() {
+            release();
+        }
+    }
+
+    static final String     TAG             = "MicLineup";
+
+    MediaCodec              mCodec;
+    ByteBuffer[]            mInputBuffers;
+    ByteBuffer[]            mOutputBuffers;
+
+    ThreadedAudioRecorder   mAudioRecorder;
+
+    private enum State{
+        INITIAL,
+        RUNNING,
+        ZOMBIE
+    }
+    State                   mState;
+
 }

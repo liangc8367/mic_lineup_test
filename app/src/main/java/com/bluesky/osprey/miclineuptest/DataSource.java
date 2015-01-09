@@ -9,7 +9,10 @@ import java.nio.ByteBuffer;
 public interface DataSource {
     /** callback when audio data is available */
     public interface CompletionHandler{
+        /** callback for available data */
         public void dataAvailable(ByteBuffer byteBuffer);
+        /** callback when datasource ends its life */
+        public void onEndOfLife();
     }
 
     /** downstream user registers its completion handler via this method */
