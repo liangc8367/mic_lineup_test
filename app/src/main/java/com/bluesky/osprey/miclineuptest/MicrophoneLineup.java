@@ -129,7 +129,7 @@ public class MicrophoneLineup {
             // compress audio
             int sz  = byteBuffer.position();
             mCodec.queueInputBuffer(
-                    index,
+                    0, //TODO: XXX, index,
                     0, // offset
                     sz,
                     0, // presentationTimeUS
