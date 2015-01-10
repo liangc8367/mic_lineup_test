@@ -18,37 +18,35 @@ public class MainActivity extends ActionBarActivity {
 
         mBtnToggle = (Button)findViewById(R.id.btnToggle);
         mTxtStatus = (TextView)findViewById(R.id.txtStatus);
-        mMicLineup = new MicrophoneLineup();
+        mAudioTx = new AudioTxPath();
     }
 
     @Override
     protected void onStop() {
-        mMicLineup.stop();
+        mAudioTx.stop();
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
-        mMicLineup = null;
+        mAudioTx = null;
         super.onDestroy();
     }
 
     @Override
     protected void onPause() {
-        mMicLineup.pause();
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        mMicLineup.resume();
         super.onResume();
         updateGUI();
     }
 
     @Override
     protected void onStart() {
-        mMicLineup.start();
+        mAudioTx.start();
         super.onStart();
     }
 
@@ -95,7 +93,7 @@ public class MainActivity extends ActionBarActivity {
     Button mBtnToggle;
     TextView mTxtStatus;
 
-    MicrophoneLineup    mMicLineup;
+    AudioTxPath    mAudioTx;
 
     boolean mEnabled = false;
 }
