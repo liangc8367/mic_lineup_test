@@ -142,13 +142,33 @@ public class AudioTxPath {
 
             int szRead = mAudioRecord.read(mCodecInputBuffers[index],
                     AudioRecordConfiguration.AUDIO_PCM20MS_SIZE);
+            Log.d(TAG, "got raw audio sample, size = " + szRead + ", index = " + index);
 
-            Log.d(TAG, "got " + szRead + "bytes");
             // encode it
+            mMediaCodec.queueInputBuffer(
+                    index,
+                    0, //offset
+                    szRead,
+                    0, // presentation time Us
+                    0  // flags
+            );
         }
 
-
         // try to get encoded audio
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        index = mMediaCodec.dequeueOutputBuffer(info, 0);
+        if( index == MediaCodec.INFO_TRY_AGAIN_LATER ){
+            return;
+        }
+        if( index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED ){
+            return;
+        }
+        if( index == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED){
+            mCodecOutputBuffers = mMediaCodec.getOutputBuffers();
+            return;
+        }
+        Log.d(TAG, "got compressed audio, size = " + info.size + ", index = " + index);
+        mMediaCodec.releaseOutputBuffer(index, false /* render */);
 
     }
 
@@ -180,6 +200,8 @@ public class AudioTxPath {
                 releaseEncoder();
                 releaseAudioRecord();
                 mState = State.ZOMBIE;
+
+                Log.i(TAG, "stopped");
             }
         }, TAG);
 
