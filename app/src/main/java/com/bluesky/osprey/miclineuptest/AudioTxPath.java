@@ -153,9 +153,14 @@ public class AudioTxPath {
     }
 
     private void startAudioThread(){
+        Log.i(TAG, "start audio thread");
         mAudioThread    = new Thread (new Runnable(){
             @Override
             public void run(){
+
+                android.os.Process.setThreadPriority(
+                        android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+
                 createAudioRecord();
                 if( createEncoder() == false ){
                     releaseAudioRecord();
@@ -176,7 +181,7 @@ public class AudioTxPath {
                 releaseAudioRecord();
                 mState = State.ZOMBIE;
             }
-        });
+        }, TAG);
 
         mAudioThread.start();
         mState = State.RUNNING;

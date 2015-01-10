@@ -18,18 +18,15 @@ public class MainActivity extends ActionBarActivity {
 
         mBtnToggle = (Button)findViewById(R.id.btnToggle);
         mTxtStatus = (TextView)findViewById(R.id.txtStatus);
-        mAudioTx = new AudioTxPath();
     }
 
     @Override
     protected void onStop() {
-        mAudioTx.stop();
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
-        mAudioTx = null;
         super.onDestroy();
     }
 
@@ -46,7 +43,6 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onStart() {
-        mAudioTx.start();
         super.onStart();
     }
 
@@ -76,6 +72,14 @@ public class MainActivity extends ActionBarActivity {
     public void onToggleButton(View view){
         mEnabled = !mEnabled;
         updateGUI();
+        if(mEnabled){
+            mAudioTx = new AudioTxPath();
+            mAudioTx.start();
+        }else{
+            mAudioTx.stop();
+            mAudioTx = null;
+        }
+
     }
 
 
